@@ -26,6 +26,7 @@
 
 //Additional
 #include "vmath.hpp"
+#include "Consts.hpp"
 #include "Shader.hpp" 
 
 #include "Entity.hpp" 
@@ -102,15 +103,14 @@ int main()//int argc, char** argv)
 {
     try
     {
-        init();
+        init(); 
+        initGL();
     }
     catch(std::exception& e)
     {
         message(e.what());
         exit(EXIT_FAILURE);
     }
-
-    initGL();
 
     mainLoop();
 
@@ -135,7 +135,11 @@ void init()
 
     window.setMouseCursorVisible(false);
 
-    std::cout << window.getSettings().majorVersion << "." << window.getSettings().minorVersion << std::endl;
+    if(window.getSettings().majorVersion != glSettings.majorVersion ||
+       window.getSettings().minorVersion != glSettings.minorVersion)
+    {
+        throw std::runtime_error("Could not initialize OpenGL 3.3 context");
+    }
 
     //Init GLEW
     if(glewInit() != GLEW_OK)
@@ -157,7 +161,7 @@ void initGL()
     glEnable(GL_SAMPLE_SHADING);
     glEnable(GL_DEPTH_TEST);
 
-    glPrimitiveRestartIndex(0xFFFF);
+    glPrimitiveRestartIndex(constants::primitiveRestartIndex);
 
     GLfloat const vertexPositions[] = {
         -0.2f, -0.2f,  -0.2f, 1.0f,
@@ -183,14 +187,14 @@ void initGL()
 
     GLushort const vertexIndices[] = {
         0, 1, 2, 3, 4, 5, 6, 7,
-        0xFFFF,
+        constants::primitiveRestartIndex,
         2, 4, 0, 6, 1, 7, 3, 5
     };
 
+    //Create a Vertex Array Object to store subsequent state
     glGenVertexArrays(1,&vao);
     glBindVertexArray(vao); 
 
-    //Create a Vertex Array Object to store subsequent state
     glGenBuffers(1, &ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -209,17 +213,7 @@ void initGL()
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertexPositions), sizeof(vertexColours), vertexColours);
 
     //Load shaders 
-    try
-    {
-        program.loadFromFile("shaders/default.vert","shaders/default.frag");
-    }
-    catch(std::exception& e)
-    { 
-        message(e.what());
-        exit(EXIT_FAILURE);
-    }
-
-    Shader::bind(program);
+    program.loadFromFile("shaders/default.vert","shaders/default.frag");
     
     //Set up attributes
     GLuint g_positionID = glGetAttribLocation(program.name(), "vertex");
