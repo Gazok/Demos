@@ -67,7 +67,6 @@ vmath::mat4 camera_trans = vmath::mat4::identity();
 //}}}
 
 //{{{Global Constants
-//Projection settings
 const float fieldOfView = 1.0471975511965976f;
 const float nearPlane = 0.1f;
 const float farPlane = 100.f;
@@ -155,7 +154,7 @@ void init()
 
     //Create the initial perspective projection
     const float aspect = static_cast<float>(constants::windowWidth) / 
-                         static_cast<float>(constants::windowWidth);
+                         static_cast<float>(constants::windowHeight);
 
     setProjection(fieldOfView, aspect, nearPlane, farPlane);
 }
