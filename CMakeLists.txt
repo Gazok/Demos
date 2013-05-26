@@ -4,6 +4,7 @@ project(Learning)
 
 set (CMAKE_BUILD_TYPE Debug) 
 set (EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} modules/)
 
 if(NOT MSVC)
     set (CMAKE_CXX_FLAGS "--std=c++11 ${CMAKE_CXX_FLAGS}")

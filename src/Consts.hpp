@@ -3,7 +3,7 @@
 
 namespace constants
 {
-    extern const unsigned int primitiveRestartIndex = 0xFFFF;
+    const unsigned int primitiveRestartIndex = 0xFFFF;
 }
 
 #endif /* CONSTS_H */
