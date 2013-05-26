@@ -5,16 +5,16 @@
 
 //{{{Includes
 //Standard Library
-#include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <cmath>
 #include <sstream>
-#include <cmath>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#else
+#include <iostream>
 #endif
 
 //SFML and GL
