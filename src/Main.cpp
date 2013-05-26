@@ -51,9 +51,6 @@ GLuint vbo;
 
 //Window information
 sf::RenderWindow window;
-char const* windowName = "GL Test App";
-int g_windowWidth = 640;
-int g_windowHeight = 480;
 
 //Uniform Variables
 vmath::mat4 projection;
@@ -126,31 +123,41 @@ void init()
 {
     sf::ContextSettings glSettings;
 
-    glSettings.majorVersion = 3;
-    glSettings.minorVersion = 3;
-    glSettings.antialiasingLevel = 8;
+    glSettings.majorVersion      = constants::glVersionMajor;
+    glSettings.minorVersion      = constants::glVersionMinor;
+    glSettings.antialiasingLevel = constants::glAntiAliasing;
 
-    window.create(sf::VideoMode::getDesktopMode(), "OpenGL", sf::Style::Default, glSettings);
+    sf::VideoMode vMode = sf::VideoMode::getDesktopMode();
+
+    vMode.width  = constants::windowWidth;
+    vMode.height = constants::windowHeight; 
+
+    window.create(vMode,
+                  constants::windowName, 
+                  sf::Style::Default, 
+                  glSettings);
+
     window.setFramerateLimit(60);
 
     window.setMouseCursorVisible(false);
 
+    //Check that graphics card supports GL version
     if(window.getSettings().majorVersion != glSettings.majorVersion ||
        window.getSettings().minorVersion != glSettings.minorVersion)
     {
         throw std::runtime_error("Could not initialize OpenGL 3.3 context");
     }
 
-    //Init GLEW
     if(glewInit() != GLEW_OK)
     {
         throw std::runtime_error("Could not initialise GLEW");
     }
 
-    const float aspect = g_windowWidth / g_windowHeight;
+    //Create the initial perspective projection
+    const float aspect = static_cast<float>(constants::windowWidth) / 
+                         static_cast<float>(constants::windowWidth);
 
     setProjection(fieldOfView, aspect, nearPlane, farPlane);
-    //camera_trans *= vmath::translate(0.0f,0.0f,-1.f);
 }
 //}}}
 
@@ -258,8 +265,8 @@ void mainLoop()
         handleEvents(loop);
 
         //reset position of mouse (hopefully)
-        const int w2 = g_windowWidth  / 2;
-        const int h2 = g_windowHeight / 2;
+        const int w2 = window.getSize().x / 2;
+        const int h2 = window.getSize().y / 2;
         sf::Mouse::setPosition({w2, h2}, window);
         lastX = w2;
         lastY = h2;
@@ -358,8 +365,6 @@ void keyboard(sf::Keyboard::Key const& key)
 //{{{void resize(int w, int h)
 void resize(int w, int h)
 {
-    g_windowWidth  = w;
-    g_windowHeight = h;
     glViewport(0,0,w,h);
 
     setProjection(fieldOfView,
