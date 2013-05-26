@@ -25,9 +25,10 @@
 #include <SFML/OpenGL.hpp>
 
 //Additional
-#include "Shader.hpp"
-
 #include "vmath.hpp"
+#include "Shader.hpp" 
+
+#include "Entity.hpp" 
 //}}}
 
 //{{{#defines
@@ -82,7 +83,7 @@ void initGL();
 //Main Loop functions
 void mainLoop();
 void handleEvents(bool&);
-void draw();
+void flipDisplay();
 void mouse(int x, int y);
 void keyboard(sf::Keyboard::Key const&);
 void resize(int w, int h);
@@ -210,7 +211,7 @@ void initGL()
     //Load shaders 
     try
     {
-        program.loadFromFile("shaders/triangles.vert","shaders/triangles.frag");
+        program.loadFromFile("shaders/default.vert","shaders/default.frag");
     }
     catch(std::exception& e)
     { 
@@ -239,6 +240,8 @@ void initGL()
 
     glEnableVertexAttribArray(g_positionID);
     glEnableVertexAttribArray(g_colourID); 
+
+    glBindVertexArray(0);
 }//}}}
 
 
@@ -252,6 +255,10 @@ void mainLoop()
 {
     bool loop = true;
 
+    Entity ent1({0.f,  0.f, -5.f}, program, vao);
+    Entity ent2({70.f, 0.f,  0.f}, program, vao);
+    Entity ent3({0.f,  0.f,  5.f}, program, vao);
+
     while(loop)
     {
         handleEvents(loop);
@@ -263,7 +270,11 @@ void mainLoop()
         lastX = w2;
         lastY = h2;
 
-        draw();
+        ent1.draw(projection*camera_rot*camera_trans);
+        ent2.draw(projection*camera_rot*camera_trans);
+        ent3.draw(projection*camera_rot*camera_trans);
+
+        flipDisplay();
     }
 } //}}}
 
@@ -375,38 +386,11 @@ void cleanup()
 //}}}
 
 //{{{void draw()
-void draw()
-{
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_PRIMITIVE_RESTART);
-
-    //Transfer projection
-    program.setUniform("projection", projection);
-
-    //Transfer camera
-    program.setUniform("camera_t", camera_trans);
-    program.setUniform("camera_r", camera_rot);
-
-    //Initial translation
-    vmath::mat4 trans = vmath::translate(-0.5f,0.0f,0.0f);
-
-    for(unsigned int i = 0; i < 3; ++i)
-    {
-        //Transfer object position
-        program.setUniform("obj_t", trans);
-
-        //Draw vertices
-        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glDrawElements(GL_TRIANGLE_STRIP, 17, GL_UNSIGNED_SHORT, 0);
-
-        //Move right
-        trans *= vmath::translate(0.5f, 0.0f, 0.0f);
-    }
-
-    glDisable(GL_PRIMITIVE_RESTART);
-
+void flipDisplay()
+{ 
     window.display();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 } //}}}
 
 

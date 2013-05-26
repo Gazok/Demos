@@ -47,50 +47,50 @@ Shader::~Shader()
 // Uniform Accessors
 /////////////////////////////////////////////
 
-//{{{Uniform Accessors
-void Shader::setUniform(std::string const& name, GLint value)
+//{{{Uniform Accessor
+void Shader::setUniform(std::string const& name, GLint value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform1i(program_, addr,value);
 }
 
-void Shader::setUniform(std::string const& name, GLuint value)
+void Shader::setUniform(std::string const& name, GLuint value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform1ui(program_, addr,value);
 }
 
-void Shader::setUniform(std::string const& name, GLfloat value) 
+void Shader::setUniform(std::string const& name, GLfloat value)  const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform1f(program_, addr,value);
 }
 
-void Shader::setUniform(std::string const& name, vmath::vec2 const& value)
+void Shader::setUniform(std::string const& name, vmath::vec2 const& value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform2fv(program_, addr, 1, value);
 }
 
-void Shader::setUniform(std::string const& name, vmath::vec3 const& value)
+void Shader::setUniform(std::string const& name, vmath::vec3 const& value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform3fv(program_, addr, 1, value);
 }
 
-void Shader::setUniform(std::string const& name, vmath::vec4 const& value)
+void Shader::setUniform(std::string const& name, vmath::vec4 const& value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 
     glProgramUniform4fv(program_, addr, 1, value);
 }
 
-void Shader::setUniform(std::string const& name, vmath::mat4 const& value)
+void Shader::setUniform(std::string const& name, vmath::mat4 const& value) const
 {
     GLuint addr = glGetUniformLocation(program_, name.c_str());
 

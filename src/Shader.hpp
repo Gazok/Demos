@@ -25,13 +25,13 @@ public:
     void loadFromFile(std::string const& vertexShader, 
                       std::string const& fragmentShader); 
 
-    void setUniform(std::string const&, GLint);
-    void setUniform(std::string const&, GLuint);
-    void setUniform(std::string const&, GLfloat);
-    void setUniform(std::string const&, vmath::vec2 const&);
-    void setUniform(std::string const&, vmath::vec3 const&);
-    void setUniform(std::string const&, vmath::vec4 const&);
-    void setUniform(std::string const&, vmath::mat4 const&);
+    void setUniform(std::string const&, GLint)              const;
+    void setUniform(std::string const&, GLuint)             const;
+    void setUniform(std::string const&, GLfloat)            const;
+    void setUniform(std::string const&, vmath::vec2 const&) const;
+    void setUniform(std::string const&, vmath::vec3 const&) const;
+    void setUniform(std::string const&, vmath::vec4 const&) const;
+    void setUniform(std::string const&, vmath::mat4 const&) const;
 
     GLuint name()    const { return program_; }
     bool   isValid() const { return !invalid_; } 
