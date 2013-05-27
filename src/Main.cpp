@@ -337,17 +337,20 @@ void keyboard(sf::Keyboard::Key const& key)
 
     if(xMove != 0 || zMove != 0)
     {
-        const float speed = 0.01f;
-        /*float aY = angleY*PI/180.f;
-        float aX = angleX*PI/180.f;
+        const float speed = 0.1f;
+        const float aY = angleX*DEG2RAD; //Rotation about Y axis
+        const float aX = angleY*DEG2RAD; //Rotation about X axis
 
-        float actualX = speed*(zMove*sin(aY) + xMove*cos(aY));
+        const float sinX = sin(aX);
+        const float sinY = sin(aY);
+        const float cosX = cos(aX);
+        const float cosY = cos(aY);
+
+        float actualX = speed*(-zMove*sinY + xMove*cosY);
         float actualY = speed*(zMove*sin(aX));
-        float actualZ = speed*(zMove*cos(aX)*cos(aY) + xMove*sin(aY));*/
+        float actualZ = speed*(zMove*cosX*cosY + xMove*sinY*cosX);
 
-        camera_trans *= vmath::translate(xMove*speed, 0.0f, zMove*speed);
-        //camera_trans *= vmath::translate(xMove*speed, 0.0f, 0.0f);
-
+        camera_trans *= vmath::translate(actualX, actualY, actualZ); 
     }
 }
 //}}}
