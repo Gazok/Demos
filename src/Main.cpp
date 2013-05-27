@@ -20,6 +20,7 @@
 //SFML and GL
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Mouse.hpp>
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
@@ -27,7 +28,6 @@
 #include "vmath.hpp"
 #include "Consts.hpp"
 #include "Shader.hpp" 
-#include "Mouse.hpp"
 
 #include "Entity.hpp" 
 //}}}
@@ -55,6 +55,8 @@ sf::RenderWindow window;
 //Uniform Variables
 vmath::mat4 projection;
 
+sf::Vector2i lastMousePos;
+
 //Camera state
 float angleX = 0;
 float angleY = 0;
@@ -77,7 +79,7 @@ void initGL();
 void mainLoop();
 void handleEvents(bool&);
 void flipDisplay();
-void rotateCamera();
+void mouse(sf::Vector2i const& pos);
 void keyboard(sf::Keyboard::Key const&);
 void resize(int w, int h);
 void cleanup();
@@ -262,7 +264,8 @@ void mainLoop()
         //reset position of mouse (hopefully)
         const int w2 = window.getSize().x / 2;
         const int h2 = window.getSize().y / 2;
-        Mouse::setPosition({w2, h2}, window);
+        sf::Mouse::setPosition({w2, h2}, window);
+        lastMousePos = {w2, h2}; 
 
         ent1.draw(projection*camera_rot*camera_trans);
         ent2.draw(projection*camera_rot*camera_trans);
@@ -290,7 +293,8 @@ void handleEvents(bool& loop)
             keyboard(event.key.code);
             break;
         case sf::Event::MouseMoved:
-            rotateCamera();
+            mouse({event.mouseMove.x,
+                   event.mouseMove.y});
             break;
         case sf::Event::Resized:
             resize(event.size.width, event.size.height);
@@ -301,18 +305,19 @@ void handleEvents(bool& loop)
 }//}}}
 
 //{{{void mouse(int x, int y)
-void rotateCamera()
+void mouse(sf::Vector2i const& pos)
 {
     const float rot = 0.1f;
 
-    Mouse::update();
-    sf::Vector2i delta = Mouse::delta();
+    sf::Vector2i delta = pos - lastMousePos;
 
     angleX += rot*delta.x;
     angleY += rot*delta.y;
     
     camera_rot =  vmath::rotate(angleY, 1.f, 0.f, 0.f);
     camera_rot *= vmath::rotate(angleX, 0.f, 1.f, 0.f);
+
+    lastMousePos = pos;
 }
 //}}}
 
