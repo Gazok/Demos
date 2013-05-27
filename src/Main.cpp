@@ -304,18 +304,21 @@ void handleEvents(bool& loop)
     }
 }//}}}
 
-//{{{void mouse(int x, int y)
+//{{{void mouse(sf::Vector2i const& pos)
 void mouse(sf::Vector2i const& pos)
 {
     const float rot = 0.1f;
 
     sf::Vector2i delta = pos - lastMousePos;
 
-    angleX += rot*delta.x;
-    angleY += rot*delta.y;
+    angleY += rot*delta.x;
+    angleX -= rot*delta.y;
+
+    if     (angleX < -90.f) angleX = -90.f;
+    else if(angleX >  90.f) angleX =  90.f;
     
-    camera_rot =  vmath::rotate(angleY, 1.f, 0.f, 0.f);
-    camera_rot *= vmath::rotate(angleX, 0.f, 1.f, 0.f);
+    camera_rot =  vmath::rotate(angleX, 1.f, 0.f, 0.f);
+    camera_rot *= vmath::rotate(angleY, 0.f, 1.f, 0.f);
 
     lastMousePos = pos;
 }
@@ -338,19 +341,19 @@ void keyboard(sf::Keyboard::Key const& key)
     if(xMove != 0 || zMove != 0)
     {
         const float speed = 0.1f;
-        const float aY = angleX*DEG2RAD; //Rotation about Y axis
-        const float aX = angleY*DEG2RAD; //Rotation about X axis
+        const float aY = angleY*DEG2RAD; //Rotation about Y axis
+        const float aX = angleX*DEG2RAD; //Rotation about X axis
 
         const float sinX = sin(aX);
         const float sinY = sin(aY);
         const float cosX = cos(aX);
         const float cosY = cos(aY);
 
-        float actualX = speed*(-zMove*sinY + xMove*cosY);
-        float actualY = speed*(zMove*sin(aX));
-        float actualZ = speed*(zMove*cosX*cosY + xMove*sinY*cosX);
+        float actualX = speed*(-zMove*cosX*sinY + xMove*cosY); //"left/right"
+        float actualZ = speed*( zMove*cosX*cosY + xMove*sinY); //"forward/back"
+        float actualY = speed*( zMove*sinX);                   //"up/down"
 
-        camera_trans *= vmath::translate(actualX, actualY, actualZ); 
+        camera_trans *= vmath::translate(actualX, actualY, actualZ);
     }
 }
 //}}}
