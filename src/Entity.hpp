@@ -2,25 +2,16 @@
 #define ENTITY_H
 
 #include "vmath.hpp"
-#include "Shader.hpp"
+#include "Model.hpp"
 
 class Entity
 {
 public: 
-    Entity(vmath::vec3 const& position);
+    Entity(vmath::vec3 const& position, Model const&);
 
     virtual void draw(vmath::mat4 const& projectView);
-
-    static void cleanup();
 private:
-    //Shader const& shader_;
     vmath::mat4 transform_;
-
-    static Shader shader_;
-    static GLuint ebo_;
-    static GLuint vbo_;
-    static GLuint vao_;
-    static bool loaded_; 
-    static void load(); 
+    Model const& model_;
 };
 #endif /* ENTITY_H */

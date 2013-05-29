@@ -18,17 +18,18 @@
 #endif
 
 //SFML and GL
+#include <GL/glew.h>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
 //Additional
 #include "vmath.hpp"
 #include "Consts.hpp"
 #include "Shader.hpp" 
+#include "Model.hpp" 
 
 #include "Entity.hpp" 
 //}}}
@@ -39,15 +40,7 @@
 #define RAD2DEG 57.29577951308232 
 //}}}
 
-//{{{Global Variables
-//Shader programs
-Shader program;
-
-//Buffers
-GLuint ebo;
-GLuint vao;
-GLuint vbo;
-
+//{{{Global Variables 
 //Window information
 sf::RenderWindow window;
 
@@ -81,7 +74,6 @@ void flipDisplay();
 void mouse(sf::Vector2i const& pos);
 void keyboard();
 void resize(int w, int h);
-void cleanup();
 
 //Helper functions
 inline void message(char const*);
@@ -107,7 +99,6 @@ int main()
 
     mainLoop();
 
-    cleanup();
     window.close();
 
     return 0;
@@ -179,9 +170,22 @@ void mainLoop()
 {
     bool loop = true;
 
-    Entity ent1({0.f,  0.f, -5.f});
-    Entity ent2({70.f, 0.f,  0.f});
-    Entity ent3({0.f,  0.f,  5.f});
+    Shader s;
+    try
+    {
+        s.loadFromFile("shaders/default.vert","shaders/default.frag");
+    }
+    catch(std::exception& e)
+    {
+        message(e.what());
+        exit(EXIT_FAILURE);
+    }
+
+    Model m(s);
+
+    Entity ent1({0.f,  0.f, -5.f}, m);
+    Entity ent2({70.f, 0.f,  0.f}, m);
+    Entity ent3({0.f,  0.f,  5.f}, m);
 
     while(loop)
     {
@@ -254,13 +258,6 @@ void keyboard()
 {
     int xMove = 0, zMove = 0;
 
-    /*
-    case sf::Keyboard::W: zMove += 1; break;
-    case sf::Keyboard::S: zMove -= 1; break;
-    case sf::Keyboard::A: xMove += 1; break;
-    case sf::Keyboard::D: xMove -= 1; break;
-    default: break;
-    */
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) zMove += 1;
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) zMove -= 1;
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) xMove += 1;
@@ -296,12 +293,6 @@ void resize(int w, int h)
                   nearPlane, farPlane); 
 }
 //}}}
-
-//{{{void cleanup()
-void cleanup()
-{
-    Entity::cleanup();
-} //}}}
 
 
 //}}}
