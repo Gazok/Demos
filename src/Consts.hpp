@@ -10,9 +10,9 @@ namespace constants
     const unsigned int glAntiAliasing = 4;
 
     //Initial Window Settings
-    char const*        windowName     = "GL Test App";
+    const char *const  windowName     = "GL Test App";
     const int          windowWidth    = 640;
     const int          windowHeight   = 480;
-}
+} 
 
 #endif /* CONSTS_H */

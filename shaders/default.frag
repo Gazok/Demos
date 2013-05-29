@@ -1,6 +1,6 @@
 #version 330 core
 
-in  vec4 fColour;
+in vec4 fColour;
 out vec4 colour;
 
 void main()

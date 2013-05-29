@@ -21,6 +21,7 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <SFML/Window/Keyboard.hpp>
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
@@ -36,8 +37,6 @@
 #define PI 3.141592653f
 #define DEG2RAD 0.017453292519943295
 #define RAD2DEG 57.29577951308232 
-
-#define BUFFER_OFFSET(offset) ((GLvoid*)(offset))
 //}}}
 
 //{{{Global Variables
@@ -80,7 +79,7 @@ void mainLoop();
 void handleEvents(bool&);
 void flipDisplay();
 void mouse(sf::Vector2i const& pos);
-void keyboard(sf::Keyboard::Key const&);
+void keyboard();
 void resize(int w, int h);
 void cleanup();
 
@@ -93,7 +92,7 @@ void setProjection(float fov, float aspect, float near, float far);
 
 
 //{{{int main()
-int main()//int argc, char** argv)
+int main()
 {
     try
     {
@@ -164,82 +163,9 @@ void initGL()
     glClearColor(1.f,1.f,1.f,1.f);
     glEnable(GL_SAMPLE_SHADING);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_SAMPLE_SHADING);
 
-    glPrimitiveRestartIndex(constants::primitiveRestartIndex);
-
-    GLfloat const vertexPositions[] = {
-        -0.2f, -0.2f,  -0.2f, 1.0f,
-         0.2f, -0.2f,  -0.2f, 1.0f,
-        -0.2f,  0.2f,  -0.2f, 1.0f,
-         0.2f,  0.2f,  -0.2f, 1.0f,
-        -0.2f,  0.2f,   0.2f, 1.0f,
-         0.2f,  0.2f,   0.2f, 1.0f,
-        -0.2f, -0.2f,   0.2f, 1.0f,
-         0.2f, -0.2f,   0.2f, 1.0f
-    };
-
-    GLfloat const vertexColours[] = {
-        1.0f, 1.0f, 1.0f, 1.0f, //c0
-        0.5f, 0.5f, 0.5f, 1.0f, //c1
-        0.5f, 0.0f, 0.0f, 1.0f, //c2
-        1.0f, 0.0f, 0.0f, 1.0f, //c3
-        0.0f, 0.5f, 0.0f, 1.0f, //c4
-        0.0f, 1.0f, 0.0f, 1.0f, //c5
-        0.0f, 0.0f, 1.0f, 1.0f, //c6
-        0.5f, 0.5f, 0.5f, 1.0f  //c7
-    };
-
-    GLushort const vertexIndices[] = {
-        0, 1, 2, 3, 4, 5, 6, 7,
-        constants::primitiveRestartIndex,
-        2, 4, 0, 6, 1, 7, 3, 5
-    };
-
-    //Create a Vertex Array Object to store subsequent state
-    glGenVertexArrays(1,&vao);
-    glBindVertexArray(vao); 
-
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 sizeof(vertexIndices),
-                 vertexIndices,
-                 GL_STATIC_DRAW);
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(vertexPositions) + sizeof(vertexColours),
-                 NULL,
-                 GL_STATIC_DRAW);
-
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertexPositions), vertexPositions);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertexPositions), sizeof(vertexColours), vertexColours);
-
-    //Load shaders 
-    program.loadFromFile("shaders/default.vert","shaders/default.frag");
-    
-    //Set up attributes
-    GLuint g_positionID = glGetAttribLocation(program.name(), "vertex");
-    GLuint g_colourID   = glGetAttribLocation(program.name(), "vColour");
-
-    glVertexAttribPointer(g_positionID,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          0,
-                          BUFFER_OFFSET(0));
-    glVertexAttribPointer(g_colourID,
-                          4,
-                          GL_FLOAT,
-                          GL_FALSE,
-                          0,
-                          BUFFER_OFFSET(sizeof(vertexPositions)));
-
-    glEnableVertexAttribArray(g_positionID);
-    glEnableVertexAttribArray(g_colourID); 
-
-    glBindVertexArray(0);
+    glPrimitiveRestartIndex(constants::primitiveRestartIndex); 
 }//}}}
 
 
@@ -253,13 +179,14 @@ void mainLoop()
 {
     bool loop = true;
 
-    Entity ent1({0.f,  0.f, -5.f}, program, vao);
-    Entity ent2({70.f, 0.f,  0.f}, program, vao);
-    Entity ent3({0.f,  0.f,  5.f}, program, vao);
+    Entity ent1({0.f,  0.f, -5.f});
+    Entity ent2({70.f, 0.f,  0.f});
+    Entity ent3({0.f,  0.f,  5.f});
 
     while(loop)
     {
         handleEvents(loop);
+        keyboard();
 
         //reset position of mouse (hopefully)
         const int w2 = window.getSize().x / 2;
@@ -288,9 +215,6 @@ void handleEvents(bool& loop)
         {
         case sf::Event::Closed:
             loop = false;
-            break;
-        case sf::Event::KeyPressed:
-            keyboard(event.key.code);
             break;
         case sf::Event::MouseMoved:
             mouse({event.mouseMove.x,
@@ -324,23 +248,27 @@ void mouse(sf::Vector2i const& pos)
 }
 //}}}
 
-//{{{void keyboard(sf::Keyboard::Key const& key)
-void keyboard(sf::Keyboard::Key const& key)
+
+//{{{void keyboard()
+void keyboard()
 {
     int xMove = 0, zMove = 0;
 
-    switch(key)
-    {
+    /*
     case sf::Keyboard::W: zMove += 1; break;
     case sf::Keyboard::S: zMove -= 1; break;
     case sf::Keyboard::A: xMove += 1; break;
     case sf::Keyboard::D: xMove -= 1; break;
     default: break;
-    }
+    */
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) zMove += 1;
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) zMove -= 1;
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) xMove += 1;
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) xMove -= 1;
 
     if(xMove != 0 || zMove != 0)
     {
-        const float speed = 0.1f;
+        const float speed = 0.01f;
         const float aY = angleY*DEG2RAD; //Rotation about Y axis
         const float aX = angleX*DEG2RAD; //Rotation about X axis
 
@@ -372,9 +300,7 @@ void resize(int w, int h)
 //{{{void cleanup()
 void cleanup()
 {
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ebo);
-    glDeleteVertexArrays(1, &vao);
+    Entity::cleanup();
 } //}}}
 
 
