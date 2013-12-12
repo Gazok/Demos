@@ -1,13 +1,14 @@
 #include <GL/glew.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include "Entity.hpp"
 
-Entity::Entity(vmath::vec3 const& pos, Model const& m)
+Entity::Entity(glm::vec3 const& pos, Model const& m)
     : model_(m)
 { 
-    transform_ = vmath::translate(pos);
+    transform_ = glm::translate(glm::mat4(1.0), pos);
 }
 
-void Entity::draw(vmath::mat4 const& projectView)
+void Entity::draw(glm::mat4 const& projectView)
 {
     model_.draw(projectView*transform_); 
 }

@@ -24,9 +24,10 @@
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/OpenGL.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 //Additional
-#include "vmath.hpp"
 #include "Consts.hpp"
 #include "Shader.hpp" 
 #include "Model.hpp" 
@@ -45,15 +46,15 @@
 sf::RenderWindow window;
 
 //Uniform Variables
-vmath::mat4 projection;
+glm::mat4 projection;
 
 sf::Vector2i lastMousePos;
 
 //Camera state
 float angleX = 0;
 float angleY = 0;
-vmath::mat4 camera_rot = vmath::mat4::identity();
-vmath::mat4 camera_trans = vmath::mat4::identity();
+glm::mat4 camera_rot = glm::mat4(1.0);
+glm::mat4 camera_trans = glm::mat4(1.0);
 //}}}
 
 //{{{Global Constants
@@ -183,9 +184,9 @@ void mainLoop()
 
     Model m(s);
 
-    Entity ent1({0.f,  0.f, -5.f}, m);
-    Entity ent2({70.f, 0.f,  0.f}, m);
-    Entity ent3({0.f,  0.f,  5.f}, m);
+    Entity ent1(glm::vec3{0.f,  0.f, -5.f}, m);
+    Entity ent2(glm::vec3{70.f, 0.f,  0.f}, m);
+    Entity ent3(glm::vec3{0.f,  0.f,  5.f}, m);
 
     while(loop)
     {
@@ -235,6 +236,8 @@ void handleEvents(bool& loop)
 //{{{void mouse(sf::Vector2i const& pos)
 void mouse(sf::Vector2i const& pos)
 {
+    using namespace glm;
+
     const float rot = 0.1f;
 
     sf::Vector2i delta = pos - lastMousePos;
@@ -245,8 +248,8 @@ void mouse(sf::Vector2i const& pos)
     if     (angleX < -90.f) angleX = -90.f;
     else if(angleX >  90.f) angleX =  90.f;
     
-    camera_rot =  vmath::rotate(angleX, 1.f, 0.f, 0.f);
-    camera_rot *= vmath::rotate(angleY, 0.f, 1.f, 0.f);
+    camera_rot = rotate(mat4(1.0), angleX, vec3(1.f, 0.f, 0.f));
+    camera_rot = rotate(camera_rot, angleY, vec3(0.f, 1.f, 0.f));
 
     lastMousePos = pos;
 }
@@ -256,6 +259,8 @@ void mouse(sf::Vector2i const& pos)
 //{{{void keyboard()
 void keyboard()
 {
+    using namespace glm;
+
     int xMove = 0, zMove = 0;
 
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) zMove += 1;
@@ -278,7 +283,7 @@ void keyboard()
         float actualZ = speed*( zMove*cosX*cosY + xMove*sinY); //"forward/back"
         float actualY = speed*( zMove*sinX);                   //"up/down"
 
-        camera_trans *= vmath::translate(actualX, actualY, actualZ);
+        camera_trans = translate(camera_trans, vec3(actualX, actualY, actualZ));
     }
 }
 //}}}
@@ -333,7 +338,7 @@ void setProjection(float fov, float aspect, float near, float far)
     const float height  = near * tangent;
     const float width   = height * aspect;
 
-    projection = vmath::frustum(-width, width, -height, height, near, far);
+    projection = glm::frustum(-width, width, -height, height, near, far);
 } //}}}
 
 

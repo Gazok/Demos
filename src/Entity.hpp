@@ -1,17 +1,17 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "vmath.hpp"
+#include <glm/glm.hpp>
 #include "Model.hpp"
 
 class Entity
 {
 public: 
-    Entity(vmath::vec3 const& position, Model const&);
+    Entity(glm::vec3 const& position, Model const&);
 
-    virtual void draw(vmath::mat4 const& projectView);
+    virtual void draw(glm::mat4 const& projectView);
 private:
-    vmath::mat4 transform_;
+    glm::mat4 transform_;
     Model const& model_;
 };
 #endif /* ENTITY_H */

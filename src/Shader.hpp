@@ -4,8 +4,7 @@
 #include <string> 
 #include <vector>
 #include <GL/glew.h>
-
-#include "vmath.hpp"
+#include <glm/glm.hpp>
 
 class Shader
 {
@@ -28,10 +27,10 @@ public:
     void setUniform(std::string const&, GLint)              const;
     void setUniform(std::string const&, GLuint)             const;
     void setUniform(std::string const&, GLfloat)            const;
-    void setUniform(std::string const&, vmath::vec2 const&) const;
-    void setUniform(std::string const&, vmath::vec3 const&) const;
-    void setUniform(std::string const&, vmath::vec4 const&) const;
-    void setUniform(std::string const&, vmath::mat4 const&) const;
+    void setUniform(std::string const&, glm::vec2 const&) const;
+    void setUniform(std::string const&, glm::vec3 const&) const;
+    void setUniform(std::string const&, glm::vec4 const&) const;
+    void setUniform(std::string const&, glm::mat4 const&) const;
 
     GLuint name()    const { return program_; }
     bool   isValid() const { return !invalid_; } 

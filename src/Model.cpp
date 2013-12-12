@@ -86,7 +86,7 @@ Model::~Model()
     glDeleteVertexArrays(1, &vao_);
 }
 
-void Model::draw(vmath::mat4 const& projectViewModel) const
+void Model::draw(glm::mat4 const& projectViewModel) const
 {
     Shader::bind(shader_);
 
