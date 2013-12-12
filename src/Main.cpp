@@ -5,6 +5,7 @@
 
 //{{{Includes
 //Standard Library
+#include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <cmath>
@@ -12,9 +13,6 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-#else
-#include <iostream>
 #endif
 
 //SFML and GL
@@ -29,32 +27,34 @@
 
 //Additional
 #include "Consts.hpp"
-#include "Shader.hpp" 
-#include "Model.hpp" 
+#include "Shader.hpp"
+#include "Model.hpp"
 
-#include "Entity.hpp" 
+#include "Entity.hpp"
 //}}}
 
 //{{{#defines
 #define PI 3.141592653f
 #define DEG2RAD 0.017453292519943295
-#define RAD2DEG 57.29577951308232 
+#define RAD2DEG 57.29577951308232
 //}}}
 
-//{{{Global Variables 
+//{{{Global Variables
 //Window information
-sf::RenderWindow window;
+sf::RenderWindow g_window;
 
-//Uniform Variables
-glm::mat4 projection;
+// Uniform Variables
+glm::mat4 g_projection;
 
-sf::Vector2i lastMousePos;
+// Mouse State
+sf::Vector2i g_lastMousePos;
+bool g_locked = false;
 
-//Camera state
-float angleX = 0;
-float angleY = 0;
-glm::mat4 camera_rot = glm::mat4(1.0);
-glm::mat4 camera_trans = glm::mat4(1.0);
+// Camera state
+float g_angleX = 0;
+float g_angleY = 0;
+glm::mat4 g_camera_rot = glm::mat4(1.0);
+glm::mat4 g_camera_trans = glm::mat4(1.0);
 //}}}
 
 //{{{Global Constants
@@ -66,7 +66,7 @@ const float farPlane = 100.f;
 //{{{Function Declarations
 //Initialization functions
 void init();
-void initGL(); 
+void initGL();
 
 //Main Loop functions
 void mainLoop();
@@ -74,11 +74,14 @@ void handleEvents(bool&);
 void flipDisplay();
 void mouse(sf::Vector2i const& pos);
 void keyboard();
+void toggleMouseLock();
+void lockMouse();
+void unlockMouse();
+void updateMouse();
 void resize(int w, int h);
 
 //Helper functions
-inline void message(char const*);
-void setProjection(float fov, float aspect, float near, float far); 
+void setProjection(float fov, float aspect, float near, float far);
 //}}}
 
 //{{{Initialization
@@ -89,18 +92,18 @@ int main()
 {
     try
     {
-        init(); 
+        init();
         initGL();
     }
     catch(std::exception& e)
     {
-        message(e.what());
+        std::cout << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 
     mainLoop();
 
-    window.close();
+    g_window.close();
 
     return 0;
 }
@@ -118,20 +121,20 @@ void init()
     sf::VideoMode vMode = sf::VideoMode::getDesktopMode();
 
     vMode.width  = constants::windowWidth;
-    vMode.height = constants::windowHeight; 
+    vMode.height = constants::windowHeight;
 
-    window.create(vMode,
-                  constants::windowName, 
-                  sf::Style::Default, 
+    g_window.create(vMode,
+                  constants::windowName,
+                  sf::Style::Default,
                   glSettings);
 
-    window.setFramerateLimit(60);
-
-    window.setMouseCursorVisible(false);
+    //g_window.setFramerateLimit(60);
+    //
+    lockMouse();
 
     //Check that graphics card supports GL version
-    if(window.getSettings().majorVersion != glSettings.majorVersion ||
-       window.getSettings().minorVersion != glSettings.minorVersion)
+    if(g_window.getSettings().majorVersion != glSettings.majorVersion ||
+       g_window.getSettings().minorVersion != glSettings.minorVersion)
     {
         throw std::runtime_error("Could not initialize OpenGL 3.3 context");
     }
@@ -142,7 +145,7 @@ void init()
     }
 
     //Create the initial perspective projection
-    const float aspect = static_cast<float>(constants::windowWidth) / 
+    const float aspect = static_cast<float>(constants::windowWidth) /
                          static_cast<float>(constants::windowHeight);
 
     setProjection(fieldOfView, aspect, nearPlane, farPlane);
@@ -153,11 +156,10 @@ void init()
 void initGL()
 {
     glClearColor(1.f,1.f,1.f,1.f);
-    glEnable(GL_SAMPLE_SHADING);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_SAMPLE_SHADING);
 
-    glPrimitiveRestartIndex(constants::primitiveRestartIndex); 
+    glPrimitiveRestartIndex(constants::primitiveRestartIndex);
 }//}}}
 
 
@@ -178,7 +180,7 @@ void mainLoop()
     }
     catch(std::exception& e)
     {
-        message(e.what());
+        std::cout << e.what() << std::endl;
         exit(EXIT_FAILURE);
     }
 
@@ -193,15 +195,13 @@ void mainLoop()
         handleEvents(loop);
         keyboard();
 
-        //reset position of mouse (hopefully)
-        const int w2 = window.getSize().x / 2;
-        const int h2 = window.getSize().y / 2;
-        sf::Mouse::setPosition({w2, h2}, window);
-        lastMousePos = {w2, h2}; 
+        updateMouse();
 
-        ent1.draw(projection*camera_rot*camera_trans);
-        ent2.draw(projection*camera_rot*camera_trans);
-        ent3.draw(projection*camera_rot*camera_trans);
+        const glm::mat4 transform = g_projection*g_camera_rot*g_camera_trans;
+
+        ent1.draw(transform);
+        ent2.draw(transform);
+        ent3.draw(transform);
 
         flipDisplay();
     }
@@ -213,13 +213,27 @@ void mainLoop()
 //{{{void handleEvents(bool& loop)
 void handleEvents(bool& loop)
 {
+    using Key = sf::Keyboard::Key;
+
     sf::Event event;
-    while(window.pollEvent(event))
+    while(g_window.pollEvent(event))
     {
         switch(event.type)
         {
         case sf::Event::Closed:
             loop = false;
+            break;
+
+        case sf::Event::KeyPressed:
+            if (event.key.code == Key::F5 or event.key.code == Key::Escape)
+            {
+                toggleMouseLock();
+            }
+            if ((event.key.code == Key::F4 and event.key.alt) or
+                (event.key.code == Key::W and event.key.control))
+            {
+                loop = false;
+            }
             break;
         case sf::Event::MouseMoved:
             mouse({event.mouseMove.x,
@@ -227,9 +241,16 @@ void handleEvents(bool& loop)
             break;
         case sf::Event::Resized:
             resize(event.size.width, event.size.height);
+            break;
+        case sf::Event::LostFocus:
+            unlockMouse();
+            break;
+        case sf::Event::GainedFocus:
+            lockMouse();
+            break;
         default:
             break;
-        } 
+        }
     }
 }//}}}
 
@@ -237,21 +258,22 @@ void handleEvents(bool& loop)
 void mouse(sf::Vector2i const& pos)
 {
     using namespace glm;
+    if (not g_locked) return;
 
     const float rot = 0.1f;
 
-    sf::Vector2i delta = pos - lastMousePos;
+    sf::Vector2i delta = pos - g_lastMousePos;
 
-    angleY += rot*delta.x;
-    angleX -= rot*delta.y;
+    g_angleY += rot*delta.x;
+    g_angleX -= rot*delta.y;
 
-    if     (angleX < -90.f) angleX = -90.f;
-    else if(angleX >  90.f) angleX =  90.f;
-    
-    camera_rot = rotate(mat4(1.0), angleX, vec3(1.f, 0.f, 0.f));
-    camera_rot = rotate(camera_rot, angleY, vec3(0.f, 1.f, 0.f));
+    if     (g_angleX < -90.f) g_angleX = -90.f;
+    else if(g_angleX >  90.f) g_angleX =  90.f;
 
-    lastMousePos = pos;
+    g_camera_rot = rotate(mat4(1.0), g_angleX, vec3(1.f, 0.f, 0.f));
+    g_camera_rot = rotate(g_camera_rot, g_angleY, vec3(0.f, 1.f, 0.f));
+
+    g_lastMousePos = pos;
 }
 //}}}
 
@@ -260,19 +282,21 @@ void mouse(sf::Vector2i const& pos)
 void keyboard()
 {
     using namespace glm;
+    using kbd = sf::Keyboard;
+    using Key = sf::Keyboard::Key;
 
     int xMove = 0, zMove = 0;
 
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) zMove += 1;
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) zMove -= 1;
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) xMove += 1;
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) xMove -= 1;
+    if(kbd::isKeyPressed(Key::W)) zMove += 1;
+    if(kbd::isKeyPressed(Key::S)) zMove -= 1;
+    if(kbd::isKeyPressed(Key::A)) xMove += 1;
+    if(kbd::isKeyPressed(Key::D)) xMove -= 1;
 
     if(xMove != 0 || zMove != 0)
     {
         const float speed = 0.01f;
-        const float aY = angleY*DEG2RAD; //Rotation about Y axis
-        const float aX = angleX*DEG2RAD; //Rotation about X axis
+        const float aY = g_angleY*DEG2RAD; //Rotation about Y axis
+        const float aX = g_angleX*DEG2RAD; //Rotation about X axis
 
         const float sinX = sin(aX);
         const float sinY = sin(aY);
@@ -283,10 +307,39 @@ void keyboard()
         float actualZ = speed*( zMove*cosX*cosY + xMove*sinY); //"forward/back"
         float actualY = speed*( zMove*sinX);                   //"up/down"
 
-        camera_trans = translate(camera_trans, vec3(actualX, actualY, actualZ));
+        g_camera_trans = translate(g_camera_trans, vec3(actualX, actualY, actualZ));
     }
 }
 //}}}
+
+void toggleMouseLock()
+{
+    g_locked = !g_locked;
+    g_window.setMouseCursorVisible(!g_locked);
+
+}
+
+void lockMouse()
+{
+    if (not g_locked) toggleMouseLock();
+}
+
+void unlockMouse()
+{
+    if (g_locked) toggleMouseLock();
+}
+
+void updateMouse()
+{
+    if (g_locked)
+    {
+        //reset position of mouse
+        const int w2 = g_window.getSize().x / 2;
+        const int h2 = g_window.getSize().y / 2;
+        sf::Mouse::setPosition({w2, h2}, g_window);
+        g_lastMousePos = {w2, h2};
+    }
+}
 
 //{{{void resize(int w, int h)
 void resize(int w, int h)
@@ -295,7 +348,7 @@ void resize(int w, int h)
 
     setProjection(fieldOfView,
                   static_cast<float>(w) /static_cast<float>(h),
-                  nearPlane, farPlane); 
+                  nearPlane, farPlane);
 }
 //}}}
 
@@ -304,8 +357,8 @@ void resize(int w, int h)
 
 //{{{void draw()
 void flipDisplay()
-{ 
-    window.display();
+{
+    g_window.display();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 } //}}}
@@ -316,29 +369,14 @@ void flipDisplay()
 //{{{Helper Functions
 
 
-//{{{inline void message(char const* msg)
-inline void message(char const* msg)
-{
-#ifdef _WINDOWS_
-    LPCTSTR caption = "Message";
-	MessageBox( NULL,
-		msg,
-		caption,
-        MB_OK | MB_ICONQUESTION);
-#else
-    std::cout << msg << std::endl;
-#endif
-}
-//}}}
-
 //{{{void setProjection(float fov, float aspect, float near, float far)
 void setProjection(float fov, float aspect, float near, float far)
-{ 
+{
     const float tangent = tan(fov/2.f);
     const float height  = near * tangent;
     const float width   = height * aspect;
 
-    projection = glm::frustum(-width, width, -height, height, near, far);
+    g_projection = glm::frustum(-width, width, -height, height, near, far);
 } //}}}
 
 
